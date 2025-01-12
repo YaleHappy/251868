@@ -264,11 +264,14 @@
             <button class="btn btn-danger btn-sm" onclick="deleteRecord('${record.id}')">刪除</button>
           </td>
         `;
+        // 以下事件監聽器已被移除，取消點選整列填入資料的功能
+        /*
         row.addEventListener('click', () => {
           document.getElementById('date').value = record.date;
           document.getElementById('item').value = record.item;
           document.getElementById('quantity').value = record.quantity;
         });
+        */
         table.appendChild(row);
       });
     }
