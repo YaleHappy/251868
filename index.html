@@ -1,165 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>訂貨記錄管理</title>
-    <!-- 引入 Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- 引入 SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        body {
-            margin: 20px;
-            background-color: #f9f9f9;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>訂貨記錄管理</title>
+  <!-- 引入 Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- 引入 SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      background-color: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-top: 20px;
+    }
+    th.sortable {
+      cursor: pointer;
+    }
+    th.sortable:hover {
+      background-color: #f2f2f2;
+    }
+    /* 適度縮小表格在手機上的邊距 */
+    @media (max-width: 576px) {
+      .container {
+        margin: 10px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>訂貨記錄管理</h1>
+  <div class="container">
+    <!-- 使用說明按鈕 -->
+    <button type="button" class="btn btn-info float-end mt-2" data-bs-toggle="modal" data-bs-target="#instructionModal">
+      使用說明
+    </button>
 
-        <div class="mb-3 row">
-            <div class="col-md-3">
-                <input type="date" id="date" class="form-control" placeholder="日期">
-            </div>
-            <div class="col-md-4">
-                <input type="text" id="item" class="form-control" placeholder="商品名稱">
-            </div>
-            <div class="col-md-3">
-                <input type="number" id="quantity" class="form-control" placeholder="數量">
-            </div>
-            <div class="col-md-1">
-                <button class="btn btn-primary" onclick="addOrUpdateRecord()">新增/更新</button>
-            </div>
-            <div class="col-md-1">
-                <button class="btn btn-secondary" onclick="clearInputs()">清除</button>
-            </div>
-        </div>
+    <h1>訂貨記錄管理</h1>
 
-        <div class="mb-3 row">
-            <div class="col-md-4">
-                <input type="text" id="search" class="form-control" placeholder="搜尋商品">
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-secondary" onclick="searchRecord()">搜尋</button>
-            </div>
-        </div>
-
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>序號</th>
-                    <th>日期</th>
-                    <th>商品名稱</th>
-                    <th>數量</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="recordTable">
-                <!-- 記錄將顯示在這裡 -->
-            </tbody>
-        </table>
+    <!-- 表單區塊 -->
+    <div class="mb-3 row g-2">
+      <div class="col-12 col-md-3">
+        <input type="date" id="date" class="form-control" placeholder="日期" />
+      </div>
+      <div class="col-12 col-md-4">
+        <input type="text" id="item" class="form-control" placeholder="商品名稱" />
+      </div>
+      <div class="col-12 col-md-3">
+        <input type="number" id="quantity" class="form-control" placeholder="數量" min="1"/>
+      </div>
+      <div class="col-6 col-md-1 d-grid">
+        <button id="submitBtn" class="btn btn-primary" onclick="addOrUpdateRecord()">新增/更新</button>
+      </div>
+      <div class="col-6 col-md-1 d-grid">
+        <button class="btn btn-secondary" onclick="clearInputs()">清除</button>
+      </div>
     </div>
 
-    <script>
-        const records = [];
+    <!-- 搜尋區塊 -->
+    <div class="mb-3 row g-2">
+      <div class="col-12 col-md-4">
+        <input type="text" id="search" class="form-control" placeholder="搜尋商品" />
+      </div>
+      <div class="col-12 col-md-2 d-grid">
+        <button class="btn btn-secondary" onclick="searchRecord()">搜尋</button>
+      </div>
+    </div>
 
-        function addOrUpdateRecord() {
-            const date = document.getElementById('date').value;
-            const item = document.getElementById('item').value;
-            const quantity = document.getElementById('quantity').value;
+    <!-- 記錄表格 -->
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead class="table-light">
+          <tr>
+            <th>序號</th>
+            <th class="sortable" onclick="sortRecords('date')">日期 <span>&#8597;</span></th>
+            <th>商品名稱</th>
+            <th class="sortable" onclick="sortRecords('quantity')">數量 <span>&#8597;</span></th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="recordTable">
+          <!-- 記錄將顯示在這裡 -->
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-            if (!date || !item || !quantity) {
-                Swal.fire('錯誤', '請填寫所有欄位！', 'error');
-                return;
-            }
+  <!-- 使用說明 Modal -->
+  <div class="modal fade" id="instructionModal" tabindex="-1" aria-labelledby="instructionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="instructionModalLabel">使用說明</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+        </div>
+        <div class="modal-body">
+          <p>本系統提供以下功能：</p>
+          <ul>
+            <li><strong>新增記錄：</strong>填寫日期、商品名稱、數量，然後點擊「新增/更新」按鈕以新增記錄。</li>
+            <li><strong>更新記錄：</strong>點擊資料表中的「更新」按鈕，系統會將該筆記錄載入表單，修改後點擊「更新」即可完成更新。</li>
+            <li><strong>刪除記錄：</strong>點擊資料表中的「刪除」按鈕，依提示輸入店號確認後刪除記錄。</li>
+            <li><strong>搜尋商品：</strong>在搜尋框內輸入商品名稱，然後點擊「搜尋」來過濾記錄。</li>
+            <li><strong>排序功能：</strong>點擊「日期」或「數量」表頭以切換升序或降序排序。</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            // 查找是否有相同的記錄
-            const existingIndex = records.findIndex(record => record.date === date && record.item === item);
+  <script type="module">
+    // Import Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-            if (existingIndex !== -1) {
-                // 更新記錄
-                records[existingIndex].quantity = quantity;
-                Swal.fire('成功', '記錄已更新！', 'success');
-            } else {
-                // 新增記錄
-                records.push({ date, item, quantity });
-                Swal.fire('成功', '記錄已新增！', 'success');
-            }
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBktQAKEcYiu3Sh1V4jb56Ytr8pCpNIVzc",
+      authDomain: "project-3977548034209227811.firebaseapp.com",
+      databaseURL: "https://project-3977548034209227811-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "project-3977548034209227811",
+      storageBucket: "project-3977548034209227811.appspot.com",
+      messagingSenderId: "920757339491",
+      appId: "1:920757339491:web:774de68711ff1fc1e97f56"
+    };
 
-            renderTable();
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const recordsRef = ref(database, 'records');
 
-            // 清空輸入欄位
-            clearInputs();
+    let records = [];
+    let sortOrder = { date: true, quantity: true };
+    let updateRecordId = null; // 用來儲存目前待更新的記錄 ID
+
+    onValue(recordsRef, (snapshot) => {
+      records = [];
+      snapshot.forEach((childSnapshot) => {
+        const record = { id: childSnapshot.key, ...childSnapshot.val() };
+        records.push(record);
+      });
+      renderTable();
+    }, (error) => {
+      console.error("讀取資料錯誤:", error);
+      Swal.fire('錯誤', '讀取資料失敗', 'error');
+    });
+
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+    async function addOrUpdateRecord() {
+      const date = document.getElementById('date').value;
+      const item = document.getElementById('item').value.trim();
+      const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+      if (!date || !item || isNaN(quantity) || quantity <= 0) {
+        Swal.fire('錯誤', '請填寫有效的所有欄位，數量需大於 0！', 'error');
+        return;
+      }
+
+      try {
+        if (updateRecordId) {
+          // 更新操作
+          await set(ref(database, `records/${updateRecordId}`), { date, item, quantity });
+          Swal.fire('成功', '記錄已更新！', 'success');
+          updateRecordId = null;
+          document.getElementById('submitBtn').textContent = '新增/更新';
+        } else {
+          // 新增操作
+          await push(recordsRef, { date, item, quantity });
+          Swal.fire('成功', '記錄已新增！', 'success');
         }
+        clearInputs();
+      } catch (error) {
+        console.error("操作記錄錯誤:", error);
+        Swal.fire('錯誤', '操作記錄失敗！', 'error');
+      }
+    }
 
-        function deleteRecord(index) {
-            Swal.fire({
-                title: '確認刪除',
-                text: '請輸入店號 251868 以確認刪除',
-                input: 'text',
-                inputPlaceholder: '輸入店號',
-                showCancelButton: true,
-                confirmButtonText: '確認',
-                cancelButtonText: '取消'
-            }).then((result) => {
-                if (result.isConfirmed && result.value === '251868') {
-                    records.splice(index, 1);
-                    renderTable();
-                    Swal.fire('成功', '記錄已刪除！', 'success');
-                } else if (result.isConfirmed) {
-                    Swal.fire('錯誤', '店號輸入錯誤，無法刪除！', 'error');
-                }
-            });
+    function prepareUpdate(recordId, date, item, quantity) {
+      updateRecordId = recordId;
+      document.getElementById('date').value = date;
+      document.getElementById('item').value = item;
+      document.getElementById('quantity').value = quantity;
+      document.getElementById('submitBtn').textContent = '更新';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteRecord(recordId) {
+      Swal.fire({
+        title: '確認刪除',
+        text: '請輸入店號 251868 以確認刪除',
+        input: 'text',
+        inputPlaceholder: '輸入店號',
+        showCancelButton: true,
+        confirmButtonText: '確認',
+        cancelButtonText: '取消'
+      }).then(async (result) => {
+        if (result.isConfirmed && result.value === '251868') {
+          try {
+            await remove(ref(database, `records/${recordId}`));
+            Swal.fire('成功', '記錄已刪除！', 'success');
+          } catch (error) {
+            console.error("刪除記錄錯誤:", error);
+            Swal.fire('錯誤', '刪除記錄失敗！', 'error');
+          }
+        } else if (result.isConfirmed) {
+          Swal.fire('錯誤', '店號輸入錯誤，無法刪除！', 'error');
         }
+      });
+    }
 
-        function searchRecord() {
-            const search = document.getElementById('search').value.toLowerCase();
-            const filteredRecords = records.filter(record => record.item.toLowerCase().includes(search));
+    function searchRecord() {
+      const search = document.getElementById('search').value.toLowerCase();
+      const filteredRecords = records.filter(record => record.item.toLowerCase().includes(search));
+      renderTable(filteredRecords);
+    }
 
-            renderTable(filteredRecords);
+    function clearInputs() {
+      document.getElementById('item').value = '';
+      document.getElementById('quantity').value = '';
+      document.getElementById('date').value = new Date().toISOString().split('T')[0];
+      updateRecordId = null;
+      document.getElementById('submitBtn').textContent = '新增/更新';
+    }
+
+    function sortRecords(field) {
+      records.sort((a, b) => {
+        if (sortOrder[field]) {
+          return a[field] > b[field] ? 1 : -1;
+        } else {
+          return a[field] < b[field] ? 1 : -1;
         }
+      });
+      sortOrder[field] = !sortOrder[field];
+      renderTable();
+    }
 
-        function clearInputs() {
-            document.getElementById('date').value = '';
-            document.getElementById('item').value = '';
-            document.getElementById('quantity').value = '';
-        }
+    function renderTable(filtered = null) {
+      const table = document.getElementById('recordTable');
+      table.innerHTML = '';
 
-        function renderTable(filtered = null) {
-            const table = document.getElementById('recordTable');
-            table.innerHTML = '';
+      const dataToRender = filtered || records;
+      if (dataToRender.length === 0) {
+        table.innerHTML = '<tr><td colspan="5" class="text-center">無記錄</td></tr>';
+        return;
+      }
 
-            (filtered || records).forEach((record, index) => {
-                const row = document.createElement('tr');
+      dataToRender.forEach((record, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${record.date}</td>
+          <td>${record.item}</td>
+          <td>${record.quantity}</td>
+          <td>
+            <button class="btn btn-warning btn-sm me-1" onclick="prepareUpdate('${record.id}', '${record.date}', '${record.item}', '${record.quantity}')">更新</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteRecord('${record.id}')">刪除</button>
+          </td>
+        `;
+        row.addEventListener('click', () => {
+          document.getElementById('date').value = record.date;
+          document.getElementById('item').value = record.item;
+          document.getElementById('quantity').value = record.quantity;
+        });
+        table.appendChild(row);
+      });
+    }
 
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${record.date}</td>
-                    <td>${record.item}</td>
-                    <td>${record.quantity}</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" onclick="deleteRecord(${index})">刪除</button>
-                    </td>
-                `;
+    window.addOrUpdateRecord = addOrUpdateRecord;
+    window.clearInputs = clearInputs;
+    window.searchRecord = searchRecord;
+    window.sortRecords = sortRecords;
+    window.deleteRecord = deleteRecord;
+    window.prepareUpdate = prepareUpdate;
+  </script>
 
-                row.addEventListener('click', () => {
-                    document.getElementById('date').value = record.date;
-                    document.getElementById('item').value = record.item;
-                    document.getElementById('quantity').value = record.quantity;
-                });
-
-                table.appendChild(row);
-            });
-        }
-    </script>
-
-    <!-- 引入 Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- 引入 Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
